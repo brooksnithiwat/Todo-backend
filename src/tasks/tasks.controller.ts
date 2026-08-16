@@ -1,4 +1,4 @@
-import { Controller, Get, Put , Param} from '@nestjs/common';
+import { Controller, Get, Put , Post ,Body ,Delete , Param} from '@nestjs/common';
 import { supabase } from '../supabase';
 
 @Controller('tasks')
@@ -39,6 +39,70 @@ export class TasksController {
   
   
   //Update Task Status by Task Id
+  @Put(':id')
+async updateTaskStatus(
+  @Param('id') id: string,
+) {
+  // Get current task
+  const { data: task, error: getError } = await supabase
+    .from('tasks')
+    .select('is_done')
+    .eq('task_id', id)
+    .single();
+
+  if (getError) {
+    throw new Error(getError.message);
+  }
+
+  // Toggle status
+  const { data, error } = await supabase
+    .from('tasks')
+    .update({ is_done: !task.is_done })
+    .eq('task_id', id)
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
   //Create Task
-  //Delete Task
+@Post()
+async createTask(
+  @Body() body: { task_name: string },
+) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .insert({
+      task_name: body.task_name,
+      is_done: false,
+    })
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+  
+// Delete Task by task id
+@Delete(':id')
+async deleteTask(
+  @Param('id') id: string,
+) {
+  const { data, error } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('task_id', id)
+    .select();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
 }
